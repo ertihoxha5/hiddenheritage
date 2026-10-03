@@ -52,7 +52,11 @@ Vite preview uses port 4173 by default; set `CLIENT_URL=http://localhost:4173` a
 
 ## Implemented scope
 
-Shared branded navigation/footer and all requested client routes are scaffolded. `/map`, `/time-machine`, and `/ciceroni` redirect unauthenticated visitors to `/login`. The client login, signup, contact form, map, and AI experiences remain placeholders for subsequent phases. `AuthContext` starts without a user; connecting the client to the implemented server sessions comes next.
+The client includes responsive Home, About, Contact, Login, and Signup pages, a sticky mobile navigation menu, and scroll reveal effects that respect reduced-motion preferences. Signup redirects to login with an account-created notification. Login opens `/map`; `/` remains the public homepage. The map, Time Machine, and Ciceroni dashboards remain placeholders for subsequent phases.
+
+Add your Kosovo landscape photo at `client/public/hero.jpg` to supply the home hero background. The `/hero.jpg` path is already configured; a dark background keeps the text readable until the file is added. Replace the five team placeholder cards in `client/src/pages/About.jsx` with your team details.
+
+`AuthProvider` holds the user and access token in memory, restores sessions silently with `/api/auth/refresh` on app load, and shows a small loader until that attempt finishes. Axios attaches the bearer token, shares one refresh request across concurrent 401 responses, and retries each original request at most once. Failed refresh clears the session and redirects to `/login`. Login/register failures are displayed on the form. No tokens are stored in localStorage or sessionStorage. `/map`, `/time-machine`, and `/ciceroni` are guarded by `ProtectedRoute`.
 
 Phase 1 implements server registration, login, rotating refresh sessions, logout, current-user lookup, contact submission, and protected monument queries. Registration returns a message without logging in. Login returns `{accessToken, user}`; refresh returns the same shape. `/api/auth/me` returns the user directly. Passwords use bcrypt with 10 rounds; access JWTs last 15 minutes and refresh JWTs last 7 days. Only SHA-256 refresh-token hashes are stored in MySQL.
 
@@ -80,7 +84,16 @@ server/schema.sql         MySQL tables
 server/test/              HTTP route tests and optional live MySQL integration
 ```
 
-## Test the server
+## Tests
+
+Client auth and validation tests:
+
+```powershell
+npm test --prefix client
+npm run build
+```
+
+The client tests use an Axios adapter to cover in-memory sessions, token attachment, shared refreshes, delayed 401 responses, failed refresh, one-retry limits, logout races, and form validation. A browser smoke check should cover mobile navigation, invalid and valid form submissions, signup notification, login redirect, reload/session restoration, logout, and the home CTA for both visitors and logged-in users. Successful registration, login, and contact submission require a running API and initialized MySQL database.
 
 ```powershell
 npm test --prefix server
