@@ -1,6 +1,11 @@
 import { ZodError } from 'zod';
+import multer from 'multer';
 
 export function errorHandler(error, _req, res, _next) {
+  if (error instanceof multer.MulterError) {
+    const message = error.code === 'LIMIT_FILE_SIZE' ? 'Image must be 5 MB or smaller.' : 'Upload exactly one file using the image field.';
+    return res.status(error.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: message });
+  }
   if (error instanceof ZodError) {
     return res.status(400).json({ error: error.issues.map((issue) => `${issue.path.join('.') || 'body'}: ${issue.message}`).join('; ') });
   }
