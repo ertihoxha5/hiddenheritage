@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply m-0 bg-heritage-bg font-sans text-heritage-dark; }
+  h1, h2, h3 { @apply font-serif; }
+  a, button { @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-heritage-dark; }
+}
