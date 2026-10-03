@@ -17,9 +17,9 @@
         "sources":  [
                         "https://dtk.rks-gov.net/Objekti?heritageId=6688"
                     ],
-        "image_now":  null,
-        "image_now_credit":  null,
-        "image_then":  null,
+        "image_now":  "/monuments/ulpiana/now.png",
+        "image_now_credit":  "User-provided photograph; original photographer not specified.",
+        "image_then":  "/monuments/ulpiana/then.png",
         "coordinate_accuracy":  "Approximate site marker; verify against a detailed map before navigation use.",
         "reconstruction_note":  "AI illustration, not a verified depiction. Original appearance and surroundings include interpretation; use a reference photograph and specialist sources for architectural accuracy."
     },
@@ -90,11 +90,10 @@
         "sources":  [
                         "https://culturalbridgepz.org/en/the-stone-bridge/"
                     ],
-        "image_now":  null,
-        "image_now_credit":  null,
-        "image_then":  null,
+        "image_now":  "/monuments/prizreni/now.png",
+        "image_now_credit":  "User-provided photograph; original photographer not specified.",
+        "image_then":  "/monuments/prizreni/then.png",
         "coordinate_accuracy":  "Approximate site marker; verify against a detailed map before navigation use.",
         "reconstruction_note":  "AI illustration, not a verified depiction. Original appearance and surroundings include interpretation; use a reference photograph and specialist sources for architectural accuracy."
     }
 ]
-
