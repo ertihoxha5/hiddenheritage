@@ -52,7 +52,7 @@ Vite preview uses port 4173 by default; set `CLIENT_URL=http://localhost:4173` a
 
 ## Implemented scope
 
-The client includes responsive Home, About, Contact, Login, Signup, and Time Machine pages, a sticky mobile navigation menu, and scroll reveal effects that respect reduced-motion preferences. Signup redirects to login with an account-created notification. Login opens `/map`; `/` remains the public homepage. The map and Ciceroni dashboards remain placeholders for subsequent phases.
+The client includes responsive Home, About, Contact, Login, Signup, and Time Machine pages, a sticky mobile navigation menu, and scroll reveal effects that respect reduced-motion preferences. Signup redirects to login with an account-created notification. Login opens `/map`; `/` remains the public homepage. The map dashboard remains a placeholder; Ciceroni now has a protected Groq-powered chat.
 
 Add your Kosovo landscape photo at `client/public/hero.jpg` to supply the home hero background. The `/hero.jpg` path is already configured; a dark background keeps the text readable until the file is added. Replace the five team placeholder cards in `client/src/pages/About.jsx` with your team details.
 
@@ -263,3 +263,58 @@ The interface labels the left panel Present-day reference and the default right 
 The documented FLUX.1 Kontext Max image-reference mechanism remains parameters.guidances.image_reference with the actual uploaded init ID, type UPLOADED, and strength MID. Prompt enhancement remains OFF and the style is None. No unsupported negative-prompt or denoising field is sent. Development logs record the reference ID/byte count and accepted generation ID without credentials. Tests verify reference bytes, reference ID in the generation payload, separate period semantics, structural prompt instructions and failed/empty/timed-out results.
 
 Visual validation still requires the original reference photo: only a completed-building illustrative example was available in the latest message, and no raster reference files exist in the workspace. No real generation or visual success is claimed for this correction. With the original photo, generate in Original-era mode and check complete buildings, foundation layout, matching viewpoint, retained surroundings, no unrelated architecture, and a COMPLETE Leonardo generation rather than accepting HTTP success alone.
+
+## Ciceroni with Groq
+
+Ciceroni uses the official groq-sdk on the server and POST /api/chat. The initial checkout had only a Ciceroni placeholder, so this implementation adds a heritage-styled waving SVG mascot, Talk to me entry point, responsive conversation panel and selected-monument context. Leonardo and the Time Machine files are unchanged by this integration.
+
+Backend-only configuration in server/.env (already ignored by Git):
+
+```dotenv
+GROQ_API_KEY=your-key-here
+GROQ_MODEL=openai/gpt-oss-120b
+```
+
+The example environment file intentionally leaves both Groq values empty. Never put these in client/.env or use a VITE_ key. The provided key has been configured locally without printing it. Models and API methods were checked against [Groq models](https://console.groq.com/docs/models), the [official JavaScript SDK](https://github.com/groq/groq-typescript), the [chat API reference](https://console.groq.com/docs/api-reference) and [structured-output support](https://console.groq.com/docs/structured-outputs). GPT-OSS 120B was also confirmed in the authenticated models endpoint. The current implementation requires a model supporting strict JSON schema output; 120B and 20B are documented supported examples.
+
+From the root:
+
+```powershell
+npm install --prefix server
+npm run dev:server
+```
+
+In a separate terminal:
+
+```powershell
+npm run dev:client
+```
+
+Checks and optional real-provider verification:
+
+```powershell
+npm test --prefix server
+npm test --prefix client
+npm run build
+npm run verify:chat --prefix server
+```
+
+The live verifier makes real Groq requests and prints answers and dataset-resolved sources, never the key. It uses a local authenticated test server without requiring a database login. Normal app login still uses MySQL.
+
+### Chat endpoint and evidence
+
+POST /api/chat requires Authorization: Bearer <accessToken> and JSON:
+
+```json
+{ "message": "Tell me about Ulpiana", "monumentId": "ulpiana", "language": "en", "history": [] }
+```
+
+monumentId is optional and accepts a dataset slug or a positive MySQL monument ID. Messages must contain 1?2000 characters. History accepts at most 12 user/assistant turns, at most 2000 characters per turn and 16000 total. Client system roles, extra instructions and unknown payload keys are rejected. Sources resolve only from server-selected dataset entries; returned IDs are validated and generated source URLs are discarded. The model receives one matching monument, or up to three candidate names for a clarification question, never the full dataset. Numeric IDs resolve to a slug through MySQL; slug matching and the protected GET /api/chat/monuments list use server/data/monuments.json directly. Previous user messages can supply context for follow-ups. Reconstruction dates are excluded from chat evidence to avoid conflating illustrative dates with documented history. Architectural interpretations are marked hypothetical.
+
+The server uses a 20-second deadline and disables SDK retries. Each authenticated user may submit 10 requests per minute. Provider authentication failures are mapped to 502 rather than client 401, so an invalid Groq key does not trigger the user-session refresh interceptor. Missing configuration returns 503; provider rate limits return 429; timeouts return 504; network/empty/malformed responses return 502. Provider failures use the message Ciceroni couldn’t respond right now. Please try again. Validation, authentication and unknown-monument errors use appropriate 400/401/404 statuses. Development diagnostics include controlled error codes and status only, not request content, raw provider errors or credentials. No hardcoded answer substitutes for a failed provider response.
+
+The frontend renders answers as escaped plain text with preserved newlines, not raw HTML. Citation links appear separately from trusted server source records. Enter sends, Shift+Enter inserts a newline, duplicate sends are blocked, Ciceroni is thinking is shown while awaiting the response, and Retry resends the exact failed request without appending a duplicate user message. Context and history are preserved. /ciceroni?monumentId=ulpiana preselects a monument; the legacy monument query parameter is also accepted. Reduced-motion preferences disable the mascot wave.
+
+### Checks performed and limits
+
+Live GPT-OSS 120B responses were checked for an Albanian question, a selected Ulpiana question with an approved source link, a follow-up using conversation history, and unavailable ticket/opening/first-builder information. Unsupported questions returned uncertainty without invented sources. An early trial exposed reconstruction-date contamination; those concept dates were removed from historical chat evidence before the final live check. Albanian wording can still be imperfect and model-generated historical claims need human review; source IDs validate provenance, not factual entailment. Dataset URLs are allowlisted and protocol-validated, not browsed or revalidated for current availability. Mocked integration checks cover missing keys/models, provider authentication/rate/network errors, invalid/empty output, bounded timeout, per-user rate limiting, invalid system instructions and invented source IDs/URLs. Browser interaction/visual checks and the optional live MySQL test were not performed.

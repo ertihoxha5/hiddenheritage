@@ -27,8 +27,11 @@
   animation: heritage-shimmer 2.5s ease-in-out infinite;
 }
 @keyframes heritage-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.ciceroni-wave { transform-box: fill-box; transform-origin: 15% 90%; animation: ciceroni-wave 2.5s ease-in-out infinite; }
+@keyframes ciceroni-wave { 0%, 55%, 100% { transform: rotate(0deg); } 12%, 36% { transform: rotate(-12deg); } 24%, 48% { transform: rotate(9deg); } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
   .reveal { opacity: 1; transform: none; }
   .heritage-shimmer { animation: none; }
+  .ciceroni-wave { animation: none; }
 }
