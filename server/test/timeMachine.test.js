@@ -1,10 +1,11 @@
+import { buildHistoricalPrompt, createHistoricalContext, loadHistoricalContext } from '../src/services/historicalContext.js';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { test } from 'node:test';
 import jwt from 'jsonwebtoken';
 import { createApp } from '../src/app.js';
 import { inspectImage, MAX_IMAGE_BYTES } from '../src/middleware/timeMachineUpload.js';
-import { reconstructImage, LEONARDO_MODEL, LEONARDO_REFERENCE_STRENGTH, HISTORICAL_PROMPT } from '../src/services/leonardoService.js';
+import { reconstructImage as generateWithLeonardo, LEONARDO_MODEL, LEONARDO_REFERENCE_STRENGTH } from '../src/services/leonardoService.js';
 
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a/xkAAAAASUVORK5CYII=', 'base64');
 const image = { buffer: png, mimetype: 'image/png', width: 1200, height: 800 };
@@ -13,6 +14,9 @@ const slot = { uploadInitImage: { id: 'init-id', url: 'https://test-bucket.s3.am
 const complete = { generations_by_pk: { status: 'COMPLETE', generated_images: [{ url: imageUrl }] } };
 const ok = (data) => ({ ok: true, status: 200, json: async () => data });
 const logger = { warn() {} };
+const context = await loadHistoricalContext();
+const { monuments: catalogRecords, ...displayContext } = context;
+const reconstructImage = (file, options) => generateWithLeonardo(file, { context, ...options });
 
 function provider({ init = slot, uploadStatus = 204, generation = { generationId: 'job-id' }, statuses = [complete], httpFailure, hangingStage, malformedJsonStage } = {}) {
   const calls = [];
@@ -48,7 +52,7 @@ test('documented init upload, S3 multipart POST, v2 image reference and v1 resul
   assert.equal(generation.model, LEONARDO_MODEL);
   assert.equal(generation.public, false);
   assert.equal(generation.parameters.quantity, 1);
-  assert.equal(generation.parameters.prompt, HISTORICAL_PROMPT);
+  assert.equal(generation.parameters.prompt, buildHistoricalPrompt(context));
   assert.equal(generation.parameters.prompt_enhance, 'OFF');
   assert.equal(generation.parameters.width, 1024);
   assert.equal(generation.parameters.height, 672);
@@ -123,12 +127,15 @@ test('protected multipart route accepts raster images and rejects invalid/oversi
   const accessSecret = 'time-machine-test-access-secret';
   const received = [];
   let failureStatus = 0;
-  const server = createApp({ accessSecret, refreshSecret: 'time-machine-test-refresh-secret', timeMachineGenerate: async (file) => { received.push(file); if (failureStatus) throw Object.assign(new Error(failureStatus === 504 ? 'Historical reconstruction timed out. Please try again.' : 'Historical reconstruction could not be generated. Please try again.'), { status: failureStatus }); return { imageUrl }; } }).listen(0, '127.0.0.1');
+  let invalidResult = false;
+  const server = createApp({ accessSecret, refreshSecret: 'time-machine-test-refresh-secret', timeMachineGenerate: async (file, options) => { received.push(file); assert.deepEqual(options.context.monuments, context.monuments); assert.ok(['original-era', '100-years'].includes(options.context.mode)); if (invalidResult) return {}; if (failureStatus) throw Object.assign(new Error(failureStatus === 504 ? 'Historical reconstruction timed out. Please try again.' : 'Historical reconstruction could not be generated. Please try again.'), { status: failureStatus }); return { imageUrl }; } }).listen(0, '127.0.0.1');
   await once(server, 'listening');
   t.after(() => new Promise((resolve) => { server.close(resolve); server.closeAllConnections(); }));
   const token = jwt.sign({ role: 'tourist' }, accessSecret, { subject: '1', expiresIn: '15m' });
-  async function post(bytes, type = 'image/png', name = 'photo.png', { auth = true, field = 'image', extra = false } = {}) {
+  async function post(bytes, type = 'image/png', name = 'photo.png', { auth = true, field = 'image', extra = false, historicalContext, mode } = {}) {
     const body = new FormData();
+    if (historicalContext !== undefined) body.append('historicalContext', JSON.stringify(historicalContext));
+    if (mode !== undefined) body.append('mode', mode);
     if (bytes) body.append(field, new Blob([bytes], { type }), name);
     if (extra) body.append('image', new Blob([png], { type: 'image/png' }), 'extra.png');
     const response = await fetch(`http://127.0.0.1:${server.address().port}/api/time-machine`, { method: 'POST', headers: auth ? { Authorization: `Bearer ${token}` } : {}, body });
@@ -136,7 +143,7 @@ test('protected multipart route accepts raster images and rejects invalid/oversi
   }
   assert.equal((await post(png, 'image/png', 'photo.png', { auth: false })).status, 401);
   assert.equal(received.length, 0);
-  assert.deepEqual(await post(png), { status: 200, body: { imageUrl } });
+  assert.deepEqual(await post(png), { status: 200, body: { imageUrl, historicalContext: displayContext } });
   assert.equal(received[0].width, 1);
   assert.deepEqual(received[0].buffer, png);
   assert.equal(received[0].path, undefined);
@@ -155,6 +162,13 @@ test('protected multipart route accepts raster images and rejects invalid/oversi
   }
   assert.equal((await post(Buffer.alloc(MAX_IMAGE_BYTES + 1))).status, 413);
   assert.equal(received.length, 1);
+  assert.equal((await post(png, 'image/png', 'photo.png', { historicalContext: null })).status, 400);
+  assert.equal((await post(png, 'image/png', 'photo.png', { historicalContext: { ...context, confirmed: false } })).status, 400);
+  assert.equal((await post(png, 'image/png', 'photo.png', { mode: 'unsupported' })).status, 400);
+  const dated = await post(png, 'image/png', 'photo.png', { mode: '100-years' });
+  assert.equal(dated.status, 200);
+  assert.equal(dated.body.historicalContext.mode, '100-years');
+  assert.equal(dated.body.historicalContext.targetYear, new Date().getUTCFullYear() - 100);
   for (const status of [502, 503, 504]) {
     failureStatus = status;
     const response = await post(png);
@@ -162,6 +176,8 @@ test('protected multipart route accepts raster images and rejects invalid/oversi
     assert.match(response.body.error, /Historical reconstruction/);
     assert.equal(response.body.imageUrl, undefined);
   }
+  failureStatus = 0; invalidResult = true;
+  assert.equal((await post(png)).status, 502);
   const huge = Buffer.from(png); huge.writeUInt32BE(50000, 16); huge.writeUInt32BE(50000, 20);
   assert.throws(() => inspectImage(huge, 'image/png'), /40 megapixels/);
 });
@@ -184,5 +200,46 @@ test('development logs preserve provider errors and failing step while redacting
   const failed = provider({ statuses: [{ generations_by_pk: { status: 'FAILED', failureReason: 'Insufficient credits' } }] });
   await assert.rejects(reconstructImage(image, { ...failed, apiKey, development: true, logger: { warn: (...args) => logs.push(args) } }), (error) => error.status === 502);
   assert.equal(logs[1][1].stage, 'poll');
+  assert.equal(logs[1][1].generationId, 'job-id');
   assert.match(logs[1][1].providerResponse, /Insufficient credits/);
+  const brokenSlot = provider({ init: { uploadInitImage: { ...slot.uploadInitImage, id: '', fields: { policy: 'secret-signed-policy', 'X-Amz-Credential': 'private-upload-credential' } } } });
+  await assert.rejects(reconstructImage(image, { ...brokenSlot, apiKey, development: true, logger: { warn: (...args) => logs.push(args) } }));
+  assert.doesNotMatch(JSON.stringify(logs), /secret-signed-policy|private-upload-credential/);
+});
+
+test('optional 100-year mode remains separate from original-era structural reconstruction', () => {
+  const historical = createHistoricalContext(catalogRecords, { mode: '100-years', date: new Date('2026-10-03T12:00:00Z') });
+  assert.equal(historical.mode, '100-years');
+  assert.equal(historical.targetYear, 1926);
+  assert.equal(historical.period, 'Around 1926');
+  const prompt = buildHistoricalPrompt(historical);
+  for (const monument of catalogRecords) {
+    assert.ok(prompt.includes(monument.name_en));
+    if (monument.history) assert.ok(prompt.includes(monument.history));
+    if (monument.original_appearance) assert.ok(prompt.includes(monument.original_appearance));
+  }
+  assert.match(prompt, /NOT the original construction era/);
+  assert.match(prompt, /Never combine different monuments/);
+  assert.match(prompt, /visibly reconstruct the architecture/);
+  assert.ok(prompt.length <= 9999);
+  assert.throws(() => createHistoricalContext([]));
+  assert.throws(() => buildHistoricalPrompt(undefined));
+});
+
+test('original-era default rebuilds archaeological footprints without imposing that style on other monuments', () => {
+  const original = createHistoricalContext(catalogRecords, { date: new Date('2026-10-03T12:00:00Z') });
+  assert.equal(original.mode, 'original-era');
+  assert.equal(original.period, 'Original-era reconstruction');
+  assert.equal(original.targetYear, undefined);
+  const prompt = buildHistoricalPrompt(original);
+  assert.match(prompt, /standing walls, roofs, entrances and connected sections/);
+  assert.match(prompt, /foreground circular foundation/);
+  assert.match(prompt, /hypothetical unless supported/);
+  assert.match(prompt, /Do NOT apply that archaeological concept to every monument/);
+  assert.match(prompt, /For churches and mosques/);
+  assert.match(prompt, /For castles and towers/);
+  assert.match(prompt, /For bridges/);
+  assert.doesNotMatch(prompt, /1926/);
+  assert.ok(prompt.length <= 9999);
+  assert.throws(() => createHistoricalContext(catalogRecords, { mode: 'unsupported' }));
 });

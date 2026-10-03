@@ -99,6 +99,7 @@ export async function reconstructImage(file, {
     stage = 'generation';
     const scale = Math.min(1, 1024 / Math.max(file.width, file.height));
     const dimension = (value) => Math.max(32, Math.min(2048, Math.round(value * scale / 32) * 32));
+    if (development) logger.info?.('Leonardo reference included', { model: LEONARDO_MODEL, referenceImageId: slot.id, referenceBytes: file.buffer.length, referenceStrength: LEONARDO_REFERENCE_STRENGTH });
     const generated = await apiRequest('/v2/generations', {
       model: LEONARDO_MODEL,
       public: false,
@@ -115,6 +116,7 @@ export async function reconstructImage(file, {
     // Current v2 response is generationId; support the earlier generate envelope.
     generationId = generated?.generationId || generated?.generate?.generationId;
     if (typeof generationId !== 'string' || !generationId) throw failure('MALFORMED_GENERATION_RESPONSE');
+    if (development) logger.info?.('Leonardo generation accepted', { generationId });
     stage = 'poll';
     while (!combined.aborted && Date.now() < deadline) {
       const result = await apiRequest(`/v1/generations/${encodeURIComponent(generationId)}`);
@@ -137,10 +139,15 @@ export async function reconstructImage(file, {
     if (development) {
       // Preserve provider diagnostics on the server, with credentials redacted.
       const redact = (value) => {
-        let text = typeof value === 'string' ? value : JSON.stringify(value);
+        if (typeof value === 'string') { try { value = JSON.parse(value); } catch { /* Plain-text provider error. */ } }
+        let text = typeof value === 'string' ? value : JSON.stringify(value, (key, item) => {
+          if (/^(fields|policy|authorization|api.?key|token|secret|password|credential|signature|x-amz-.+)$/i.test(key)) return '[REDACTED]';
+          if (key === 'url' && typeof item === 'string') return item.split('?')[0];
+          return item;
+        });
         if (!text) return text;
         if (apiKey) text = text.split(apiKey).join('[REDACTED]');
-        return text.replace(/Bearer\s+[^\s"']+/gi, 'Bearer [REDACTED]');
+        return text.replace(/Bearer\s+[^\s"']+/gi, 'Bearer [REDACTED]').replace(/(X-Amz-(?:Signature|Credential|Security-Token)=)[^&\s"']+/gi, '$1[REDACTED]');
       };
       diagnostic.message = redact(error.message);
       diagnostic.providerResponse = redact(error.providerBody ?? lastResponse);

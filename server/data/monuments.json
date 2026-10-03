@@ -1,1 +1,100 @@
-[]
+[
+    {
+        "slug":  "ulpiana",
+        "name_en":  "Ulpiana Archaeological Site",
+        "name_sq":  "Parku Arkeologjik Ulpiana",
+        "type":  "archaeological",
+        "municipality":  "Graçanicë",
+        "lat":  42.571,
+        "lng":  21.176,
+        "built_period":  "Roman imperial period; rebuilt as Justiniana Secunda in the 6th century",
+        "short_description":  "The remains of a Roman and late antique urban settlement near Graçanicë.",
+        "history":  "Ulpiana developed as a Roman urban center. Following the earthquake of 518, the settlement was rebuilt under Emperor Justinian and renamed Justiniana Secunda. Different remains belong to different phases.",
+        "original_appearance":  "For a Roman imperial street scene: an orderly street grid, stone-and-brick masonry buildings with plastered walls, tiled roofs and functional public spaces. Building elevations, decoration and street furnishings are conjectural. Do not combine this phase with later Justinianic churches.",
+        "reconstruction_period":  "3rd century CE, Roman imperial urban phase; interpretive reconstruction",
+        "century":  "3rd century",
+        "surroundings":  "An inhabited Roman town on a broad plain with surrounding farmland and distant low hills.",
+        "sources":  [
+                        "https://dtk.rks-gov.net/Objekti?heritageId=6688"
+                    ],
+        "image_now":  null,
+        "image_now_credit":  null,
+        "image_then":  null,
+        "coordinate_accuracy":  "Approximate site marker; verify against a detailed map before navigation use.",
+        "reconstruction_note":  "AI illustration, not a verified depiction. Original appearance and surroundings include interpretation; use a reference photograph and specialist sources for architectural accuracy."
+    },
+    {
+        "slug":  "prizren-fortress",
+        "name_en":  "Prizren Fortress",
+        "name_sq":  "Kalaja e Prizrenit",
+        "type":  "castle",
+        "municipality":  "Prizren",
+        "lat":  42.2093,
+        "lng":  20.7455,
+        "built_period":  "Late antiquity; rebuilt throughout the medieval and Ottoman periods",
+        "short_description":  "A hilltop fortress overlooking Prizren and the Lumbardh River.",
+        "history":  "Archaeology records occupation from the Bronze Age onward. The fortress developed through late antique, medieval and Ottoman phases; no single completion date represents the entire site.",
+        "original_appearance":  "For a late antique reconstruction: complete stone curtain walls following the rocky hill, defensive towers and a fortified gate. Treat tower heights, roof shapes and internal buildings as conjectural; exclude Ottoman additions.",
+        "reconstruction_period":  "6th century CE, late antique fortified phase",
+        "century":  "6th century",
+        "surroundings":  "Rocky hillside, unpaved approaches, wooded slopes and a small settlement near the river below.",
+        "sources":  [
+                        "https://kktk.rks-gov.net/location/kalaja-e-prizrenit/"
+                    ],
+        "image_now":  null,
+        "image_now_credit":  null,
+        "image_then":  null,
+        "coordinate_accuracy":  "Approximate site marker; verify against a detailed map before navigation use.",
+        "reconstruction_note":  "AI illustration, not a verified depiction. Original appearance and surroundings include interpretation; use a reference photograph and specialist sources for architectural accuracy."
+    },
+    {
+        "slug":  "novo-brdo-fortress",
+        "name_en":  "Novo Brdo Fortress",
+        "name_sq":  "Kalaja e Novobërdës (Artanës)",
+        "type":  "castle",
+        "municipality":  "Novobërdë",
+        "lat":  42.615,
+        "lng":  21.41722,
+        "built_period":  "13th–14th centuries",
+        "short_description":  "A medieval hilltop fortress overlooking the historic mining settlement of Novobërdë.",
+        "history":  "The fortress protected a settlement associated with silver and gold mining, metalworking and coin production. Novo Brdo is documented as Nuovo Monte in the early 14th century. Its defenses comprise an upper and lower fortress; the upper fortress has six towers.",
+        "original_appearance":  "Complete stone defensive walls enclosing upper and lower fortifications on a steep hill, with six square or rectangular towers in the upper fortress and an eastern entrance. Use surviving masonry and plans for proportions. Tower heights, battlements, roof forms and internal buildings are interpretive; avoid oversized fantasy towers.",
+        "reconstruction_period":  "14th century, medieval fortified phase",
+        "century":  "14th century",
+        "surroundings":  "Grassy hills, unpaved paths and a modest medieval mining settlement with workshops and stone-and-timber houses below the fortress.",
+        "sources":  [
+                        "https://dtk.rks-gov.net/Objekti?heritageId=8712",
+                        "https://en.wikipedia.org/wiki/Novo_Brdo_Fortress"
+                    ],
+        "image_now":  null,
+        "image_now_credit":  null,
+        "image_then":  null,
+        "coordinate_accuracy":  "Approximate site marker; verify against a detailed map before navigation use.",
+        "reconstruction_note":  "AI illustration, not a verified depiction. Original appearance and surroundings include interpretation; use a reference photograph and specialist sources for architectural accuracy."
+    },
+    {
+        "slug":  "prizren-stone-bridge",
+        "name_en":  "Prizren Stone Bridge",
+        "name_sq":  "Ura e Gurit në Prizren",
+        "type":  "bridge",
+        "municipality":  "Prizren",
+        "lat":  42.2098,
+        "lng":  20.7407,
+        "built_period":  "Probably late 15th or early 16th century; exact date unknown",
+        "short_description":  "A historic stone pedestrian bridge across the Lumbardh River.",
+        "history":  "Its construction date is inferred from masonry and building technique. The historic bridge had three main arches. A flood destroyed it in 1979; the reconstructed bridge opened in 1982.",
+        "original_appearance":  "Carved stone blocks joined with lime mortar, three main arches with the central arch higher than the side arches, a stone-cobbled pedestrian deck and low stone parapets. Restore the historic span rather than copying only the shortened modern form.",
+        "reconstruction_period":  "Around 1500, approximate original construction phase",
+        "century":  "Late 15th or early 16th century",
+        "surroundings":  "Natural riverbanks with unpaved approaches, small riverside houses and market activity; no modern concrete river channel.",
+        "sources":  [
+                        "https://culturalbridgepz.org/en/the-stone-bridge/"
+                    ],
+        "image_now":  null,
+        "image_now_credit":  null,
+        "image_then":  null,
+        "coordinate_accuracy":  "Approximate site marker; verify against a detailed map before navigation use.",
+        "reconstruction_note":  "AI illustration, not a verified depiction. Original appearance and surroundings include interpretation; use a reference photograph and specialist sources for architectural accuracy."
+    }
+]
+

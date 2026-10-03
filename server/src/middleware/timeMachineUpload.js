@@ -7,7 +7,7 @@ const types = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg'
 
 export const timeMachineUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_IMAGE_BYTES, files: 1, fields: 1, fieldSize: 12000, parts: 2 },
+  limits: { fileSize: MAX_IMAGE_BYTES, files: 1, fields: 1, fieldSize: 32, parts: 2 },
   fileFilter(_req, file, callback) {
     const type = types[path.extname(file.originalname).toLowerCase()];
     callback(type && type === file.mimetype ? null : invalidImage('Upload a PNG or JPEG image. SVG files must be converted to PNG first.'), !!type && type === file.mimetype);
