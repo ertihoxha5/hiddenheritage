@@ -52,7 +52,7 @@ Vite preview uses port 4173 by default; set `CLIENT_URL=http://localhost:4173` a
 
 ## Implemented scope
 
-The client includes responsive Home, About, Contact, Login, Signup, and Time Machine pages, a sticky mobile navigation menu, and scroll reveal effects that respect reduced-motion preferences. Signup redirects to login with an account-created notification. Login opens `/map`; `/` remains the public homepage. The map dashboard remains a placeholder; Ciceroni now has a protected Groq-powered chat.
+The client includes responsive public pages, a protected heritage map, Time Machine, and Groq-powered Ciceroni, with a sticky mobile navigation menu and reduced-motion support. Signup redirects to login with an account-created notification. Login opens `/map`; `/` remains the public homepage.
 
 Add your Kosovo landscape photo at `client/public/hero.jpg` to supply the home hero background. The `/hero.jpg` path is already configured; a dark background keeps the text readable until the file is added. Replace the five team placeholder cards in `client/src/pages/About.jsx` with your team details.
 
@@ -64,9 +64,39 @@ The refresh cookie is HTTP-only, `SameSite=Lax`, scoped to `/api/auth`, and `Sec
 
 The server requires two different JWT secrets and refuses to start with missing secrets or the example placeholders. Generate each secret with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Passwords require at least 8 characters and at most 72 UTF-8 bytes (bcrypt's input limit). Emails are trimmed and normalized to lowercase; roles are `tourist` (default), `teacher`, or `guide`. Validation failures return 400 `{error}`, bad login credentials return 401 with the same message for both unknown emails and wrong passwords, and duplicate registration returns 409.
 
-`server/data/monuments.json` starts as an empty array, ready for curated data. Each monument has `slug`, `name_en`, `name_sq`, `type`, `municipality`, numeric `lat` and `lng`, and optional `built_period`, `short_description`, `history`, `image_now`, `image_now_credit`, `image_then`, and `sources` (an array of source strings). Put images in `client/public/monuments/<slug>/now.jpg` and `then.jpg`; use `/monuments/<slug>/now.jpg` and `/monuments/<slug>/then.jpg` in records. The seed validates the full dataset, upserts by slug in a transaction, and can be rerun without creating duplicates.
+`server/data/monuments.json` contains the curated monument records. Each monument has `slug`, `name_en`, `name_sq`, `type`, `municipality`, numeric `lat` and `lng`, and optional `built_period`, `short_description`, `history`, `image_now`, `image_now_credit`, `image_then`, and `sources` (an array of source strings). Put images in `client/public/monuments/<slug>/now.jpg` and `then.jpg`; use `/monuments/<slug>/now.jpg` and `/monuments/<slug>/then.jpg` in records. The seed validates the full dataset, upserts by slug in a transaction, and can be rerun without creating duplicates.
 
 All AI calls run server-side. `server/src/services/ai.js` provides a generic 20-second JSON-request helper. The Time Machine's upload/generation/polling workflow lives entirely in `server/src/services/leonardoService.js`, with a 20-second timeout per external call and a 55-second overall deadline.
+
+## Phase 4: heritage map dashboard
+
+The protected `/map` dashboard draws local Natural Earth 1:50m country polygons from `client/public/geo/countries.geojson`; it uses no tile layer or external map service. Kosovo is highlighted in yellow, nearby countries are labeled, and navigation is constrained to the Balkans. Search filters markers by name and flies to a selected result. Typed SVG markers turn black when selected; closing the panel or pressing Escape clears the selection. Reset restores the Kosovo view and clears search.
+
+The detail panel is 420px wide on desktop and becomes a scrolling bottom sheet below 1024px. It loads the protected monument detail endpoint, displays bilingual names, period, photographs, history, sources and a monument-specific Ciceroni link. Loading skeletons and retry states cover API failures. Rapid selection changes cancel stale detail requests.
+
+Seed the existing dataset and start both services from the root:
+
+```powershell
+npm run seed
+npm run dev:server
+```
+
+In another terminal:
+
+```powershell
+npm run dev:client
+```
+
+Log in and open `http://localhost:5173/map`. The current dataset contains four monuments, but their image fields are empty. Add credited photos and reconstructions under `client/public/monuments/<slug>/`, set `image_now`, `image_now_credit` and `image_then` in `server/data/monuments.json`, and rerun the seed. Missing or broken images show explicit unavailable states.
+
+Verification commands:
+
+```powershell
+npm test --prefix client
+npm run build
+```
+
+The map tests check the actual local GeoJSON's separate Kosovo feature and neighbors, map colors, all marker types, accent-insensitive search, dataset coordinate validity and safe source/image URLs. A real MySQL HTTP check verified unauthenticated 401, all four map records and detail responses, and unknown-slug 404. Browser visual verification was unavailable. Before the demo, check marker switching, search/Enter, zoom/reset, close/Escape, detail retry, source links and the Ciceroni link on desktop and a mobile screen. No before/after slider is included; both images appear separately.
 
 ## Structure
 
